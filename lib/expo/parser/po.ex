@@ -65,7 +65,7 @@ defmodule Expo.Parser.Po do
 
   comment =
     string("#")
-    |> lookahead_not(utf8_char([?., ?:, ?,, ?|, ?~]))
+    |> lookahead_not(utf8_char([?., ?:, ?,]))
     |> concat(whitespace_no_nl)
     |> ignore()
     |> concat(comment_content)
@@ -80,14 +80,6 @@ defmodule Expo.Parser.Po do
     |> concat(comment_content)
     |> unwrap_and_tag(:extracted_comment)
     |> label("extracted_comment")
-
-  previous_msgid =
-    string("#|")
-    |> concat(whitespace_no_nl)
-    |> ignore()
-    |> concat(msgid)
-    |> unwrap_and_tag(:previous_msgid)
-    |> label("previous_msgid")
 
   flag_content =
     whitespace_no_nl
@@ -124,7 +116,7 @@ defmodule Expo.Parser.Po do
   reference_entry =
     whitespace_no_nl
     |> concat(reference_entry_file)
-    |> concat(optional(reference_entry_line))
+    |> concat(reference_entry_line)
     |> concat(ignore(choice([string(","), string(" "), lookahead(newline)])))
     |> reduce(:make_reference)
 
@@ -141,8 +133,7 @@ defmodule Expo.Parser.Po do
       comment,
       extracted_comment,
       reference,
-      flag,
-      previous_msgid
+      flag
     ])
 
   plural_form =
@@ -151,11 +142,8 @@ defmodule Expo.Parser.Po do
     |> ignore(string("]"))
     |> label("plural form (like [0])")
 
-  obsolete_prefix = string("#~") |> concat(whitespace_no_nl) |> ignore() |> tag(:obsolete)
-
   msgstr_with_plural_form =
-    ignore(optional(obsolete_prefix))
-    |> concat(ignore(string("msgstr")))
+    ignore(string("msgstr"))
     |> concat(plural_form)
     |> concat(whitespace_no_nl)
     |> concat(strings)
@@ -164,22 +152,18 @@ defmodule Expo.Parser.Po do
 
   translation_base =
     repeat(translation_meta)
-    |> concat(optional(obsolete_prefix))
     |> optional(msgctxt)
-    |> concat(optional(obsolete_prefix))
     |> post_traverse(:attach_line_number)
     |> concat(msgid)
 
   singular_translation =
     translation_base
-    |> concat(optional(obsolete_prefix))
     |> concat(msgstr)
     |> reduce({:make_translation, [Translation.Singular]})
     |> label("singular translation")
 
   plural_translation =
     translation_base
-    |> concat(optional(obsolete_prefix))
     |> concat(msgid_plural)
     |> times(msgstr_with_plural_form, min: 1)
     |> reduce({:make_translation, [Translation.Plural]})
