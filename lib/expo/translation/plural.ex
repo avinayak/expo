@@ -34,7 +34,5 @@ defmodule Expo.Translation.Plural do
 
   @spec key(t()) :: {String.t() | nil, String.t(), String.t()}
   def key(%__MODULE__{msgctxt: msgctxt, msgid: msgid, msgid_plural: msgid_plural} = _translation),
-    do:
-      {IO.iodata_to_binary(msgctxt || []), IO.iodata_to_binary(msgid),
-       IO.iodata_to_binary(msgid_plural)}
+    do: {msgctxt, IO.iodata_to_binary(msgid), IO.iodata_to_binary(msgid_plural)}
 end

@@ -18,14 +18,12 @@ defmodule Expo.Parser.Po do
   newline = ascii_char([?\n]) |> label("newline") |> ignore()
 
   optional_whitespace =
-    ascii_char([?\s, ?\n, ?\r, ?\t])
-    |> times(min: 0)
+    utf8_string([?\s, ?\n, ?\r, ?\t], min: 0)
     |> label("whitespace")
     |> ignore()
 
   whitespace_no_nl =
-    ascii_char([?\s, ?\r, ?\t])
-    |> times(min: 1)
+    utf8_string([?\s, ?\r, ?\t], min: 0)
     |> label("whitespace")
     |> ignore()
 
@@ -63,15 +61,12 @@ defmodule Expo.Parser.Po do
       |> label("#{keyword} followed by strings")
     end
 
-  comment_content =
-    repeat(utf8_char(not: ?\n))
-    |> concat(newline)
-    |> reduce(:to_string)
+  comment_content = concat(utf8_string([not: ?\n], min: 1), newline)
 
   comment =
     string("#")
     |> lookahead_not(utf8_char([?., ?:, ?,, ?|, ?~]))
-    |> concat(optional(whitespace_no_nl))
+    |> concat(whitespace_no_nl)
     |> ignore()
     |> concat(comment_content)
     |> unwrap_and_tag(:comment)
@@ -80,7 +75,7 @@ defmodule Expo.Parser.Po do
   extracted_comment =
     string("#.")
     |> lookahead_not(utf8_char([?., ?:, ?,, ?|, ?~]))
-    |> concat(optional(whitespace_no_nl))
+    |> concat(whitespace_no_nl)
     |> ignore()
     |> concat(comment_content)
     |> unwrap_and_tag(:extracted_comment)
@@ -95,9 +90,9 @@ defmodule Expo.Parser.Po do
     |> label("previous_msgid")
 
   flag_content =
-    optional(whitespace_no_nl)
-    |> concat(utf8_char(not: ?\n, not: ?,) |> repeat() |> reduce(:to_string))
-    |> concat(optional(whitespace_no_nl))
+    whitespace_no_nl
+    |> concat(utf8_string([not: ?\n, not: ?,], min: 0))
+    |> concat(whitespace_no_nl)
 
   flag =
     ignore(string("#"))
@@ -127,7 +122,7 @@ defmodule Expo.Parser.Po do
     |> unwrap_and_tag(:file)
 
   reference_entry =
-    optional(whitespace_no_nl)
+    whitespace_no_nl
     |> concat(reference_entry_file)
     |> concat(optional(reference_entry_line))
     |> concat(ignore(choice([string(","), string(" "), lookahead(newline)])))
@@ -179,8 +174,7 @@ defmodule Expo.Parser.Po do
     translation_base
     |> concat(optional(obsolete_prefix))
     |> concat(msgstr)
-    |> tag(Translation.Singular)
-    |> reduce(:make_translation)
+    |> reduce({:make_translation, [Translation.Singular]})
     |> label("singular translation")
 
   plural_translation =
@@ -188,11 +182,10 @@ defmodule Expo.Parser.Po do
     |> concat(optional(obsolete_prefix))
     |> concat(msgid_plural)
     |> times(msgstr_with_plural_form, min: 1)
-    |> tag(Translation.Plural)
-    |> reduce(:make_translation)
+    |> reduce({:make_translation, [Translation.Plural]})
     |> label("plural translation")
 
-  translation = choice([singular_translation, plural_translation])
+  translation = label(choice([singular_translation, plural_translation]), "translation")
 
   po_entry =
     optional_whitespace
@@ -204,7 +197,8 @@ defmodule Expo.Parser.Po do
              times(po_entry, min: 1)
              |> reduce(:make_translations)
              |> unwrap_and_tag(:translations)
-             |> eos()
+             |> eos(),
+             inline: true
 
   @doc """
   Parse `.po` file
@@ -269,13 +263,9 @@ defmodule Expo.Parser.Po do
     %Translations{translations: translations, headers: headers, top_comments: top_comments}
   end
 
-  defp make_translation(tokens) do
-    {[{type, type_attrs}], attrs} =
-      Keyword.split(tokens, [Translation.Singular, Translation.Plural])
-
+  defp make_translation(tokens, type) do
     attrs =
-      [attrs, type_attrs]
-      |> Enum.concat()
+      tokens
       |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
       |> Enum.map(&make_translation_attribute(type, elem(&1, 0), elem(&1, 1)))
 

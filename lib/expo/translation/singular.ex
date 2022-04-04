@@ -32,5 +32,5 @@ defmodule Expo.Translation.Singular do
 
   @spec key(t()) :: {String.t() | nil, String.t()}
   def key(%__MODULE__{msgctxt: msgctxt, msgid: msgid} = _translation),
-    do: {IO.iodata_to_binary(msgctxt || []), IO.iodata_to_binary(msgid)}
+    do: {msgctxt, IO.iodata_to_binary(msgid)}
 end
