@@ -227,4 +227,44 @@ defmodule Expo.Po.TokenizerTest do
     assert tokenize("   ") == {:ok, []}
     assert tokenize("\r\n\t") == {:ok, []}
   end
+
+  test "obsolete are tokenized with obsolete flag" do
+    assert tokenize(~S(#~ msgid "foo")) == {:ok, [{:obsolete, 1}, {:msgid, 1}, {:str, 1, "foo"}]}
+
+    assert tokenize(~S(#~ msgid_plural "foo")) ==
+             {:ok, [{:obsolete, 1}, {:msgid_plural, 1}, {:str, 1, "foo"}]}
+
+    assert tokenize(~S"""
+           #~ msgid_plural "foo\n"
+           #~ "bar"
+           """) ==
+             {:ok,
+              [
+                {:obsolete, 1},
+                {:msgid_plural, 1},
+                {:str, 1, "foo\n"},
+                {:obsolete, 2},
+                {:str, 2, "bar"}
+              ]}
+  end
+
+  test "previous are tokenized with previous flag" do
+    assert tokenize(~S(#| msgid "foo")) == {:ok, [{:previous, 1}, {:msgid, 1}, {:str, 1, "foo"}]}
+
+    assert tokenize(~S(#| msgid_plural "foo")) ==
+             {:ok, [{:previous, 1}, {:msgid_plural, 1}, {:str, 1, "foo"}]}
+
+    assert tokenize(~S"""
+           #| msgid_plural "foo\n"
+           #| "bar"
+           """) ==
+             {:ok,
+              [
+                {:previous, 1},
+                {:msgid_plural, 1},
+                {:str, 1, "foo\n"},
+                {:previous, 2},
+                {:str, 2, "bar"}
+              ]}
+  end
 end

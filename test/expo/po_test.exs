@@ -434,59 +434,57 @@ defmodule Expo.PoTest do
                """)
     end
 
-    # TODO: Re-enable later
-    # test "with previous msgid" do
-    #   assert {:ok,
-    #           %Translations{
-    #             translations: [
-    #               %Translation.Singular{
-    #                 msgid: ["hello"],
-    #                 msgstr: ["ciao"],
-    #                 previous_msgids: [["holla"]]
-    #               }
-    #             ]
-    #           }} =
-    #            Po.parse_string(~S"""
-    #            #: reference:7
-    #            #, fuzzy
-    #            #| msgid ""
-    #            #| "fo\n"
-    #            #| "bar\n"
-    #            #| "baz\n"
-    #            msgid ""
-    #            "foo\n"
-    #            "bar\n"
-    #            "baz\n"
-    #            msgstr "bar"
+    test "with previous msgid" do
+      assert {:ok,
+              %Translations{
+                translations: [
+                  %Translation.Singular{
+                    msgid: ["hello"],
+                    msgstr: ["ciao"],
+                    previous_msgids: [["holla"]]
+                  }
+                ]
+              }} =
+               Po.parse_string(~S"""
+               #: reference:7
+               #, fuzzy
+               #| msgid ""
+               #| "fo\n"
+               #| "bar\n"
+               #| "baz\n"
+               msgid ""
+               "foo\n"
+               "bar\n"
+               "baz\n"
+               msgstr "bar"
 
-    #            #: reference:8
-    #            #| msgid "old"
-    #            #| msgid_plural "olds"
-    #            msgid "new"
-    #            msgid "news"
-    #            msgstr[0] "translated"
-    #            """)
-    # end
+               #: reference:8
+               #| msgid "old"
+               #| msgid_plural "olds"
+               msgid "new"
+               msgid "news"
+               msgstr[0] "translated"
+               """)
+    end
 
-    # TODO: Re-enable later
-    # test "with obsolete translation" do
-    #   assert {:ok,
-    #           %Translations{
-    #             translations: [
-    #               %Translation.Singular{
-    #                 msgid: ["hello"],
-    #                 msgstr: ["ciao"],
-    #                 comments: [" comment"],
-    #                 obsolete: true
-    #               }
-    #             ]
-    #           }} =
-    #            Po.parse_string("""
-    #            # comment
-    #            #~ msgid "hello"
-    #            #~ msgstr "ciao"
-    #            """)
-    # end
+    test "with obsolete translation" do
+      assert {:ok,
+              %Translations{
+                translations: [
+                  %Translation.Singular{
+                    msgid: ["hello"],
+                    msgstr: ["ciao"],
+                    comments: [" comment"],
+                    obsolete: true
+                  }
+                ]
+              }} =
+               Po.parse_string("""
+               # comment
+               #~ msgid "hello"
+               #~ msgstr "ciao"
+               """)
+    end
 
     test "with multiple concatenated strings" do
       assert {:ok,

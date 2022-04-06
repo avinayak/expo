@@ -1,6 +1,6 @@
 Nonterminals grammar translations translation pluralizations pluralization
-             strings comments maybe_msgctxt.
-Terminals str msgid msgid_plural msgctxt msgstr plural_form comment.
+             strings comments maybe_msgctxt maybe_obsolete_msgctxt.
+Terminals str msgid msgid_plural msgctxt msgstr plural_form comment obsolete.
 Rootsymbol grammar.
 
 grammar ->
@@ -15,6 +15,7 @@ translations ->
 translations ->
   comments translation translations : [add_comments_to_translation('$2', '$1')|'$3'].
 
+% TODO: Parse previous / obsolete
 translation ->
   maybe_msgctxt msgid strings msgstr strings : {translation, #{
     comments       => [],
@@ -55,6 +56,11 @@ maybe_msgctxt ->
   '$empty' : nil.
 maybe_msgctxt ->
   msgctxt strings : '$2'.
+
+maybe_obsolete_msgctxt ->
+  '$empty' : nil.
+maybe_obsolete_msgctxt ->
+  obsolete msgctxt strings : '$2'.
 
 Erlang code.
 
